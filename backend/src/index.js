@@ -8,6 +8,7 @@ import { fileURLToPath } from "url";  // Add this import
 import { connectDB } from "./lib/db.js";
 import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/message.route.js";
+import streamRoutes from "./routes/stream.route.js";
 import { app, server } from "./lib/socket.js";
 
 // Get the directory name properly with ES modules
@@ -36,6 +37,7 @@ app.use(
 
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
+app.use("/api/stream", streamRoutes);
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../../frontend/dist")));  // Fixed path

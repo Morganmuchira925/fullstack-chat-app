@@ -24,8 +24,49 @@ io.on("connection", (socket) => {
   const userId = socket.handshake.query.userId;
   if (userId) userSocketMap[userId] = socket.id;
 
-  // io.emit() is used to send events to all the connected clients
+  // send updated online users list to all clients
   io.emit("getOnlineUsers", Object.keys(userSocketMap));
+
+  // ─── Video Call Events ─────────────────────────────────────────────────────
+
+  // Caller → Receiver: incoming call notification
+  socket.on("callInvite", ({ callId, callType, receiverId, callerName, callerPic }) => {
+    const receiverSocketId = userSocketMap[receiverId];
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("incomingCall", {
+        callId,
+        callType,
+        callerId: userId,
+        callerName,
+        callerPic,
+      });
+    }
+  });
+
+  // Receiver → Caller: call was accepted
+  socket.on("callAccepted", ({ callId, callerId }) => {
+    const callerSocketId = userSocketMap[callerId];
+    if (callerSocketId) {
+      io.to(callerSocketId).emit("callAccepted", { callId });
+    }
+  });
+
+  // Either side → Other side: call was declined or ended
+  socket.on("callDeclined", ({ callId, callerId }) => {
+    const callerSocketId = userSocketMap[callerId];
+    if (callerSocketId) {
+      io.to(callerSocketId).emit("callDeclined", { callId });
+    }
+  });
+
+  socket.on("callEnded", ({ callId, receiverId }) => {
+    const receiverSocketId = userSocketMap[receiverId];
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("callEnded", { callId });
+    }
+  });
+
+  // ──────────────────────────────────────────────────────────────────────────
 
   socket.on("disconnect", () => {
     console.log("A user disconnected", socket.id);
